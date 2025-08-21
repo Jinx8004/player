@@ -13,7 +13,13 @@ exports.handler = async function (event, context) {
 
   try {
     // Fetch the M3U8 content from the real server
-    const response = await fetch(streamUrl);
+    // NEW: We add headers to make the request look like a browser
+    const response = await fetch(streamUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'
+      }
+    });
+
     const data = await response.text();
 
     // Return the content back to our video player
