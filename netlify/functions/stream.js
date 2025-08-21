@@ -13,10 +13,11 @@ exports.handler = async function (event, context) {
 
   try {
     // Fetch the M3U8 content from the real server
-    // NEW: We add headers to make the request look like a browser
+    // NEW: We now add a 'Referer' header as well
     const response = await fetch(streamUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+        'Referer': 'https://dai.google.com/'
       }
     });
 
