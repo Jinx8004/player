@@ -1,7 +1,5 @@
 const fetch = require('node-fetch');
 
-// Helper function to get the base URL from a full URL
-// e.g., "https://example.com/live/stream.m3u8" -> "https://example.com/live/"
 function getBaseUrl(url) {
   const lastSlash = url.lastIndexOf('/');
   return url.substring(0, lastSlash + 1);
@@ -22,29 +20,36 @@ exports.handler = async function (event, context) {
     const response = await fetch(streamUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-        'Referer': 'https://dai.google.com/' // Keeping a plausible referer
+        'Referer': 'https://centra.ink/' // Referer should match the stream's domain
       }
     });
 
     const playlistText = await response.text();
 
-    // Rewrite the playlist to use absolute URLs
+    // Rewrite the playlist to proxy all segment URLs back through this function
     const rewrittenPlaylist = playlistText
       .split('\n')
       .map(line => {
         line = line.trim();
-        // If the line is a URL (not a tag) and is relative, make it absolute
         if (line && !line.startsWith('#') && !line.startsWith('http')) {
-          return baseUrl + line;
+          // Construct the full URL for the segment
+          const absoluteSegmentUrl = baseUrl + line;
+          // Rewrite the line to point back to our proxy
+          return `/.netlify/functions/stream?url=${encodeURIComponent(absoluteSegmentUrl)}`;
         }
         return line;
       })
       .join('\n');
 
+    // Determine the correct Content-Type. Playlists are mpegurl, video segments are different.
+    const contentType = streamUrl.includes('.m3u8') 
+      ? 'application/vnd.apple.mpegurl' 
+      : 'video/MP2T';
+
     return {
       statusCode: 200,
       headers: {
-        'Content-Type': 'application/vnd.apple.mpegurl',
+        'Content-Type': contentType,
         'Access-Control-Allow-Origin': '*',
       },
       body: rewrittenPlaylist,
